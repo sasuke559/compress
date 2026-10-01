@@ -1,0 +1,47 @@
+<UserControl x:Class="Compress.Controls.ProgressView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock x:Name="TitleText" Text="Working" Style="{StaticResource Heading}" />
+        <TextBlock x:Name="StageText" Foreground="{StaticResource Text2}" FontSize="13" Margin="0,6,0,26" TextWrapping="Wrap" />
+        <TextBlock x:Name="PercentText" Text="0%" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" FontSize="60" />
+        <ProgressBar x:Name="Bar" Style="{StaticResource Progress}" Margin="0,10,0,20" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition Height="10" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Border Style="{StaticResource Tile}">
+                <StackPanel>
+                    <TextBlock Text="Elapsed" Style="{StaticResource TileLabel}" />
+                    <TextBlock x:Name="ElapsedText" Text="0:00" Style="{StaticResource TileValue}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Tile}">
+                <StackPanel>
+                    <TextBlock Text="Remaining" Style="{StaticResource TileLabel}" />
+                    <TextBlock x:Name="RemainingText" Text="—" Style="{StaticResource TileValue}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="2" Style="{StaticResource Tile}">
+                <StackPanel>
+                    <TextBlock Text="Speed" Style="{StaticResource TileLabel}" />
+                    <TextBlock x:Name="SpeedText" Text="—" Style="{StaticResource TileValue}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource Tile}">
+                <StackPanel>
+                    <TextBlock Text="Pass" Style="{StaticResource TileLabel}" />
+                    <TextBlock x:Name="PassText" Text="1 / 1" Style="{StaticResource TileValue}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+        <Button Style="{StaticResource GhostButton}" Content="Cancel" Margin="0,24,0,0" Click="Cancel_Click" />
+    </StackPanel>
+</UserControl>

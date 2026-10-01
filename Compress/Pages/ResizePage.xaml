@@ -1,0 +1,265 @@
+<UserControl x:Class="Compress.Pages.ResizePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Compress.Controls"
+             xmlns:pages="clr-namespace:Compress.Pages">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <DataTemplate x:Key="QueueItemTemplate" DataType="{x:Type pages:QueueItem}">
+            <Grid ToolTip="{Binding Message}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Border Width="32" Height="32" CornerRadius="9" Background="#1C1C1C" VerticalAlignment="Center">
+                    <TextBlock x:Name="Glyph" Text="&#xE714;" Style="{StaticResource Icon}" FontSize="14" Foreground="{StaticResource Text2}" />
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FileName}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Details}" FontSize="11.5" Foreground="{StaticResource Text3}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <TextBlock x:Name="StatusLabel" Grid.Column="2" Text="{Binding StatusText}" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{StaticResource Text2}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <Button Grid.Column="3" Style="{StaticResource PlayerButton}" Width="28" Height="28" FontSize="11" Content="&#xE711;"
+                        Foreground="{StaticResource Text3}" ToolTip="Remove from queue" Click="RemoveItem_Click"
+                        Visibility="{Binding CanRemove, Converter={StaticResource BoolToVis}}" />
+                <ProgressBar Grid.Row="1" Grid.ColumnSpan="4" Style="{StaticResource Progress}" Height="4" Margin="0,10,0,0"
+                             Value="{Binding Progress, Mode=OneWay}" Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVis}}" />
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Processing">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Text}" />
+                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Text}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Done">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Accent}" />
+                    <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;" />
+                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Accent}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Failed">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Danger}" />
+                    <Setter TargetName="Glyph" Property="Text" Value="&#xE783;" />
+                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Skipped">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Text3}" />
+                    <Setter TargetName="Glyph" Property="Text" Value="&#xE8D8;" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- ================= Empty state ================= -->
+        <Grid x:Name="EmptyView">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,30">
+                <controls:DropZone Title="Drop videos to resize" ButtonText="Select Videos" Pick="AddVideos_Click" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ================= Editor ================= -->
+        <Grid x:Name="EditorView" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="340" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Margin="34,30,34,22">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Live preview -->
+                <Grid x:Name="PreviewHost" SizeChanged="PreviewHost_SizeChanged">
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
+                        <controls:VideoPlayer x:Name="Player" Width="640" Height="360" />
+                        <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="14"
+                                Background="#D90A0A0A" CornerRadius="10" Padding="3" BorderBrush="#33FFFFFF" BorderThickness="1">
+                            <UniformGrid Rows="1" Width="170">
+                                <RadioButton x:Name="ShowBefore" Style="{StaticResource Segment}" GroupName="ResizePreview" Content="Before" Checked="PreviewMode_Checked" />
+                                <RadioButton x:Name="ShowAfter" Style="{StaticResource Segment}" GroupName="ResizePreview" Content="After" IsChecked="True" Checked="PreviewMode_Checked" />
+                            </UniformGrid>
+                        </Border>
+                        <Border VerticalAlignment="Top" HorizontalAlignment="Right" Margin="14" Background="#D90A0A0A" CornerRadius="10" Padding="10,6"
+                                BorderBrush="#33FFFFFF" BorderThickness="1" IsHitTestVisible="False">
+                            <TextBlock x:Name="PreviewBadge" FontSize="12" FontWeight="SemiBold" Foreground="White" />
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- Queue -->
+                <StackPanel Grid.Row="1" Margin="0,22,0,0">
+                    <Grid Margin="0,0,6,10">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Queue" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <Border Background="{StaticResource Surface2}" CornerRadius="8" Padding="7,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="QueueCount" Text="0" FontSize="11.5" FontWeight="SemiBold" Foreground="{StaticResource Text2}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="ClearFinishedButton" Style="{StaticResource LinkButton}" Content="Clear finished" FontSize="12" Margin="0,0,10,0"
+                                    Click="ClearFinished_Click" />
+                            <Button x:Name="AddMoreButton" Style="{StaticResource ChipButton}" Click="AddVideos_Click" Margin="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0" />
+                                    <TextBlock Text="Add videos" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                    <ListBox x:Name="QueueList" Style="{StaticResource QueueList}" MaxHeight="232" ItemTemplate="{StaticResource QueueItemTemplate}"
+                             SelectionChanged="QueueList_SelectionChanged" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Side panel -->
+            <Border Grid.Column="1" BorderBrush="{StaticResource Line}" BorderThickness="1,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                    <Grid Margin="20,26,20,24">
+
+                        <!-- Settings -->
+                        <StackPanel x:Name="SettingsPanel">
+                            <TextBlock Text="Resize" Style="{StaticResource Heading}" Margin="0,0,0,18" />
+
+                            <TextBlock Text="RESOLUTION" Style="{StaticResource Label}" />
+                            <UniformGrid x:Name="ResolutionGrid" Columns="2" Margin="0,0,-8,4">
+                                <RadioButton Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="1920x1080" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="1920 × 1080" Style="{StaticResource TileMain}" /><TextBlock Text="1080p · 16:9" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                                <RadioButton Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="2560x1440" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="2560 × 1440" Style="{StaticResource TileMain}" /><TextBlock Text="1440p · 16:9" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                                <RadioButton Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="3840x2160" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="3840 × 2160" Style="{StaticResource TileMain}" /><TextBlock Text="4K · 16:9" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                                <RadioButton Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="1280x720" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="1280 × 720" Style="{StaticResource TileMain}" /><TextBlock Text="720p · 16:9" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                                <RadioButton Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="1080x1920" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="1080 × 1920" Style="{StaticResource TileMain}" /><TextBlock Text="Vertical · TikTok" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                                <RadioButton Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="1440x1080" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="1440 × 1080" Style="{StaticResource TileMain}" /><TextBlock Text="4:3 stretched res" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                                <RadioButton Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="1080x1080" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="1080 × 1080" Style="{StaticResource TileMain}" /><TextBlock Text="Square · 1:1" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                                <RadioButton x:Name="CustomRadio" Style="{StaticResource OptionTile}" GroupName="ResizeRes" Tag="custom" Checked="Options_Changed">
+                                    <StackPanel><TextBlock Text="Custom" Style="{StaticResource TileMain}" /><TextBlock Text="Any size" Style="{StaticResource TileSub}" /></StackPanel>
+                                </RadioButton>
+                            </UniformGrid>
+                            <Grid Visibility="{Binding IsChecked, ElementName=CustomRadio, Converter={StaticResource BoolToVis}}" Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="CustomWidth" Style="{StaticResource Input}" Text="1920" TextAlignment="Center" TextChanged="Custom_TextChanged" />
+                                <TextBlock Grid.Column="1" Text="×" Foreground="{StaticResource Text3}" FontSize="15" VerticalAlignment="Center" Margin="10,0" />
+                                <TextBox x:Name="CustomHeight" Grid.Column="2" Style="{StaticResource Input}" Text="1080" TextAlignment="Center" TextChanged="Custom_TextChanged" />
+                            </Grid>
+
+                            <TextBlock Text="MODE" Style="{StaticResource Label}" Margin="0,6,0,8" />
+                            <RadioButton x:Name="StretchRadio" Style="{StaticResource PresetCard}" GroupName="ResizeScale" IsChecked="True" Checked="Options_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="Stretch" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Fills the whole frame, the picture gets wider. Perfect for stretched-res gameplay (1440 × 1080 → 1920 × 1080)."
+                                               Style="{StaticResource CardText}" />
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton x:Name="FitRadio" Style="{StaticResource PresetCard}" GroupName="ResizeScale" Checked="Options_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="Fit" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Keeps the proportions and adds black bars." Style="{StaticResource CardText}" />
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton x:Name="CropRadio" Style="{StaticResource PresetCard}" GroupName="ResizeScale" Checked="Options_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="Crop" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Keeps the proportions, fills the frame and cuts off the edges." Style="{StaticResource CardText}" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <TextBlock Text="QUALITY" Style="{StaticResource Label}" Margin="0,8,0,8" />
+                            <Border Style="{StaticResource SegmentHost}">
+                                <UniformGrid Rows="1">
+                                    <RadioButton x:Name="QualityOriginal" Style="{StaticResource Segment}" GroupName="ResizeQuality" Content="Original" IsChecked="True"
+                                                 Checked="Options_Changed" ToolTip="Near-lossless, keeps the original look" />
+                                    <RadioButton x:Name="QualityHigh" Style="{StaticResource Segment}" GroupName="ResizeQuality" Content="High" Checked="Options_Changed"
+                                                 ToolTip="Very good quality, smaller files" />
+                                    <RadioButton x:Name="QualityMedium" Style="{StaticResource Segment}" GroupName="ResizeQuality" Content="Small" Checked="Options_Changed"
+                                                 ToolTip="Good quality, much smaller files" />
+                                </UniformGrid>
+                            </Border>
+
+                            <Grid Margin="2,0,0,16">
+                                <StackPanel Margin="0,0,50,0">
+                                    <TextBlock Text="Skip videos already at this size" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock Text="No need to re-encode them." FontSize="12" Foreground="{StaticResource Text3}" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <CheckBox x:Name="SkipSameSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                          IsChecked="True" Click="Options_Changed" />
+                            </Grid>
+
+                            <controls:SaveModeSelector x:Name="SaveMode"
+                                                       NewFileHint="The originals stay as they are; resized copies get the size added to the name." />
+
+                            <Border Style="{StaticResource Tile}" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Videos" Style="{StaticResource TileLabel}" />
+                                        <TextBlock x:Name="SummaryCount" Text="0" Style="{StaticResource TileValue}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                        <TextBlock Text="Output" Style="{StaticResource TileLabel}" HorizontalAlignment="Right" />
+                                        <TextBlock x:Name="SummaryOutput" Text="—" Style="{StaticResource TileValue}" HorizontalAlignment="Right" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <TextBlock x:Name="SettingsNote" Style="{StaticResource CardText}" Foreground="{StaticResource Danger}" Margin="2,-4,2,12" Visibility="Collapsed" />
+
+                            <Button x:Name="ResizeButton" Style="{StaticResource WhiteButton}" AutomationProperties.Name="Resize videos" Click="ResizeButton_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="ResizeButtonText" Text="Resize video" />
+                                    <TextBlock Text="&#xE72A;" Style="{StaticResource Icon}" FontSize="12" Margin="10,1,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Progress -->
+                        <controls:ProgressView x:Name="ProgressPanel" Title="Resizing" Visibility="Collapsed" CancelRequested="Progress_CancelRequested" />
+
+                        <!-- Done -->
+                        <StackPanel x:Name="DonePanel" Visibility="Collapsed">
+                            <Border Width="46" Height="46" CornerRadius="23" Background="{StaticResource AccentSoft}" HorizontalAlignment="Left">
+                                <TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" FontSize="18" Foreground="{StaticResource Accent}" />
+                            </Border>
+                            <TextBlock x:Name="DoneTitle" Text="All done" Style="{StaticResource Heading}" Margin="0,16,0,0" />
+                            <TextBlock x:Name="DoneText" Style="{StaticResource CardText}" Margin="0,6,0,20" />
+                            <Button Style="{StaticResource WhiteButton}" Click="ShowInFolder_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xED25;" Style="{StaticResource Icon}" FontSize="14" Margin="0,0,10,0" />
+                                    <TextBlock Text="Show in folder" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource GhostButton}" Content="Resize more videos" Margin="0,10,0,0" Click="ResizeMore_Click" />
+                            <Button Style="{StaticResource LinkButton}" Content="Back to settings" HorizontalAlignment="Center" Margin="0,10,0,0" Click="BackToSettings_Click" />
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

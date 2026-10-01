@@ -1,0 +1,172 @@
+<Window x:Class="Compress.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:pages="clr-namespace:Compress.Pages"
+        Title="Compress"
+        Width="1400" Height="920" MinWidth="1060" MinHeight="700"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Bg}"
+        Foreground="{StaticResource Text}"
+        FontFamily="{StaticResource TextFont}"
+        UseLayoutRounding="True"
+        AllowDrop="True"
+        DragEnter="Window_DragEnter" DragOver="Window_DragOver" DragLeave="Window_DragLeave" Drop="Window_Drop"
+        PreviewKeyDown="Window_PreviewKeyDown">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="84" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= Sidebar ================= -->
+        <Border Background="#0D0D0D" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <!-- Logo as vector (same drawing as Assets/app.ico) so it stays sharp at any DPI -->
+                <Viewbox DockPanel.Dock="Top" Width="36" Height="36" Margin="0,18,0,27">
+                    <Canvas Width="256" Height="256">
+                        <Rectangle Width="256" Height="256" RadiusX="46" RadiusY="46" Fill="{StaticResource Accent}" />
+                        <Path Fill="#0A0A0A" Data="M78,62 L180,62 L129,110 Z M78,194 L180,194 L129,148 Z" />
+                        <Rectangle Canvas.Left="57" Canvas.Top="124" Width="143" Height="8" Fill="#0A0A0A" />
+                    </Canvas>
+                </Viewbox>
+                <StackPanel>
+                    <RadioButton x:Name="NavCompress" Style="{StaticResource NavButton}" GroupName="Nav" IsChecked="True"
+                                 Tag="&#xE73F;" Content="Compress" Checked="Nav_Checked" ToolTip="Make videos smaller (Ctrl+1)" />
+                    <RadioButton x:Name="NavCutter" Style="{StaticResource NavButton}" GroupName="Nav"
+                                 Tag="&#xE8C6;" Content="Cutter" Checked="Nav_Checked" ToolTip="Cut videos to length (Ctrl+2)" />
+                    <RadioButton x:Name="NavResize" Style="{StaticResource NavButton}" GroupName="Nav"
+                                 Tag="&#xE740;" Content="Resize" Checked="Nav_Checked" ToolTip="Stretch or resize videos to 1920×1080 and more (Ctrl+3)" />
+                    <RadioButton x:Name="NavShorts" Style="{StaticResource NavButton}" GroupName="Nav"
+                                 Tag="&#xE8EA;" Content="Shorts" Checked="Nav_Checked" ToolTip="Gameplay to 9:16 for TikTok, Reels and Shorts, HUD included (Ctrl+4)" />
+                    <RadioButton x:Name="NavConverter" Style="{StaticResource NavButton}" GroupName="Nav"
+                                 Tag="&#xE8AB;" Content="Convert" Checked="Nav_Checked" ToolTip="Convert videos to MP4, MOV, MKV, WebM, AVI, GIF, MP3 or WAV (Ctrl+5)" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ================= Main ================= -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="72" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1">
+                <Grid Margin="24,0,20,0">
+                    <TextBlock x:Name="PageTitle" Text="Compress" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" FontSize="28"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Border x:Name="EngineBadge" CornerRadius="10" Background="{StaticResource Surface2}" BorderBrush="{StaticResource Line2}"
+                                BorderThickness="1" Padding="14,0" Height="36" Margin="0,0,12,0" VerticalAlignment="Center" Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse x:Name="EngineDot" Width="7" Height="7" Fill="{StaticResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock x:Name="EngineBadgeText" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Text2}" />
+                            </StackPanel>
+                        </Border>
+                        <Button x:Name="SettingsButton" Style="{StaticResource CircleIconButton}" Content="&#xE713;"
+                                ToolTip="Settings" />
+                    </StackPanel>
+
+                    <!-- Settings flyout -->
+                    <Popup x:Name="SettingsPopup" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom"
+                           HorizontalOffset="-340" VerticalOffset="10" AllowsTransparency="True" PopupAnimation="Fade">
+                        <Border Width="380" Background="#121212" BorderBrush="{StaticResource Line2}" BorderThickness="1" CornerRadius="16" Padding="20" Margin="0,0,12,12">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="30" ShadowDepth="8" Opacity="0.6" Color="Black" />
+                            </Border.Effect>
+                            <StackPanel>
+                                <TextBlock Text="Settings" Style="{StaticResource Heading}" FontSize="18" Margin="0,0,0,18" />
+
+                                <TextBlock Text="SAVE TO" Style="{StaticResource Label}" />
+                                <RadioButton x:Name="OutputSameRadio" Style="{StaticResource PlainRadio}" GroupName="Output" Content="Same folder as the original" Checked="OutputMode_Changed" />
+                                <RadioButton x:Name="OutputCustomRadio" Style="{StaticResource PlainRadio}" GroupName="Output" Content="Custom folder" Checked="OutputMode_Changed" />
+                                <Grid Margin="26,2,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="OutputFolderText" Text="No folder selected" Foreground="{StaticResource Text3}" FontSize="12"
+                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <Button Grid.Column="1" Style="{StaticResource ChipButton}" Content="Choose…" Margin="0" Click="ChooseOutputFolder_Click" />
+                                </Grid>
+
+                                <TextBlock Text="COMPRESSED FILE SUFFIX" Style="{StaticResource Label}" />
+                                <TextBox x:Name="SuffixBox" Style="{StaticResource Input}" FontSize="13" Margin="0,0,0,18" LostFocus="SuffixBox_LostFocus" />
+
+                                <TextBlock Text="AUDIO" Style="{StaticResource Label}" />
+                                <Grid Margin="0,0,0,18">
+                                    <StackPanel Margin="0,0,56,0">
+                                        <TextBlock Text="Mix game and mic tracks" FontSize="13.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Clips from the NVIDIA app or OBS with separate audio tracks get one track with everything, so Discord and phones play all of it. Turn off to keep the tracks separate for editing."
+                                                   FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <CheckBox x:Name="MixAudioSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0"
+                                              Click="MixAudioSwitch_Click" />
+                                </Grid>
+
+                                <TextBlock Text="ENGINE" Style="{StaticResource Label}" />
+                                <Border Style="{StaticResource Tile}">
+                                    <StackPanel>
+                                        <TextBlock x:Name="FfmpegInfoText" Text="FFmpeg not found" FontSize="12.5" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="HardwareInfoText" Text="" FontSize="12" Foreground="{StaticResource Text2}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Button Style="{StaticResource LinkButton}" Content="Use a different ffmpeg.exe…" HorizontalAlignment="Left" Margin="-4,8,0,0"
+                                        FontSize="12" Click="LocateFfmpeg_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </Grid>
+            </Border>
+
+            <!-- One-time engine setup -->
+            <Grid x:Name="SetupView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,40">
+                    <Border Width="460" CornerRadius="16" BorderThickness="1" BorderBrush="{StaticResource Line2}" Background="{StaticResource Surface}" Padding="24">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{StaticResource Accent}" FontSize="16" Margin="0,0,10,0" />
+                                <TextBlock Text="One-time setup: video engine" FontSize="16" FontWeight="SemiBold" />
+                            </StackPanel>
+                            <TextBlock x:Name="FfmpegCardText" Style="{StaticResource CardText}" Margin="0,8,0,16"
+                                       Text="Compress uses FFmpeg to encode and cut your videos. It is downloaded once (about 200 MB) and stored in your user folder." />
+                            <ProgressBar x:Name="FfmpegProgress" Style="{StaticResource Progress}" Height="6" Margin="0,0,0,16" Visibility="Collapsed" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="DownloadFfmpegButton" Style="{StaticResource WhiteButton}" Height="40" Click="DownloadFfmpeg_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
+                                        <TextBlock Text="Download FFmpeg" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource GhostButton}" Height="40" Content="Locate ffmpeg.exe…" Margin="10,0,0,0" Click="LocateFfmpeg_Click" />
+                            </StackPanel>
+                            <TextBlock x:Name="SetupError" Foreground="{StaticResource Danger}" FontSize="12.5" TextWrapping="Wrap" Margin="0,14,0,0" Visibility="Collapsed" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- Pages -->
+            <Grid x:Name="PagesHost" Grid.Row="1">
+                <pages:CompressPage x:Name="CompressView" />
+                <pages:CutterPage x:Name="CutterView" Visibility="Collapsed" />
+                <pages:ResizePage x:Name="ResizeView" Visibility="Collapsed" />
+                <pages:ShortsPage x:Name="ShortsView" Visibility="Collapsed" />
+                <pages:ConverterPage x:Name="ConverterView" Visibility="Collapsed" />
+            </Grid>
+        </Grid>
+
+        <!-- ================= Drop overlay ================= -->
+        <Grid x:Name="DropOverlay" Grid.ColumnSpan="2" IsHitTestVisible="False" Visibility="Collapsed">
+            <Rectangle Margin="14" RadiusX="22" RadiusY="22" Fill="#1484CC16" Stroke="{StaticResource Accent}"
+                       StrokeThickness="2" StrokeDashArray="6 4" />
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="&#xE898;" Style="{StaticResource Icon}" FontSize="40" Foreground="{StaticResource Accent}" />
+                <TextBlock x:Name="DropText" Text="Drop to load video" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" FontSize="26" Margin="0,16,0,0" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

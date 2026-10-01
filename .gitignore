@@ -1,0 +1,17 @@
+# Build output
+bin/
+obj/
+publish/
+dist/
+*.zip
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+desktop.ini
