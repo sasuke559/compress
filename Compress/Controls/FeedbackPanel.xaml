@@ -1,0 +1,79 @@
+<UserControl x:Class="Compress.Controls.FeedbackPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Dimmed backdrop; a click outside the card closes it -->
+    <Grid x:Name="Backdrop" Background="#B3000000" MouseLeftButtonDown="Backdrop_MouseLeftButtonDown">
+        <Border x:Name="Card" Width="520" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24"
+                Background="#121212" BorderBrush="{StaticResource Line2}" BorderThickness="1" CornerRadius="18" Padding="26,24"
+                MouseLeftButtonDown="Card_MouseLeftButtonDown">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.7" Color="Black" />
+            </Border.Effect>
+            <StackPanel>
+                <Grid Margin="0,0,0,6">
+                    <TextBlock Text="Send feedback" Style="{StaticResource Heading}" FontSize="20" VerticalAlignment="Center" />
+                    <Button Style="{StaticResource RowIconButton}" Content="&#xE711;" HorizontalAlignment="Right" ToolTip="Close (Esc)" Click="Close_Click" />
+                </Grid>
+                <TextBlock Text="Found a bug or have an idea for Compress? Tell us, every report is read."
+                           Style="{StaticResource CardText}" Margin="0,0,0,18" />
+
+                <Border Style="{StaticResource SegmentHost}">
+                    <UniformGrid Columns="2">
+                        <RadioButton x:Name="KindBug" Style="{StaticResource Segment}" GroupName="FeedbackKind" IsChecked="True" Checked="Kind_Checked">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEBE8;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Report a bug" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="KindIdea" Style="{StaticResource Segment}" GroupName="FeedbackKind" Checked="Kind_Checked">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEA80;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock Text="Suggest an idea" />
+                            </StackPanel>
+                        </RadioButton>
+                    </UniformGrid>
+                </Border>
+
+                <TextBlock Text="TITLE" Style="{StaticResource Label}" />
+                <TextBox x:Name="TitleBox" Style="{StaticResource Input}" FontSize="13.5" MaxLength="120" Margin="0,0,0,4" TextChanged="Input_TextChanged" />
+                <TextBlock x:Name="TitleHint" FontSize="11.5" Foreground="{StaticResource Text3}" Margin="2,0,0,14" />
+
+                <TextBlock x:Name="DescriptionLabel" Text="WHAT HAPPENED?" Style="{StaticResource Label}" />
+                <TextBox x:Name="DescriptionBox" Style="{StaticResource Input}" FontSize="13.5" Height="150" AcceptsReturn="True" TextWrapping="Wrap"
+                         VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" MaxLength="4000" Margin="0,0,0,4" TextChanged="Input_TextChanged" />
+                <TextBlock x:Name="DescriptionHint" FontSize="11.5" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="2,0,0,16" />
+
+                <Grid Margin="0,0,0,20">
+                    <StackPanel Margin="0,0,56,0">
+                        <TextBlock Text="Include system info" FontSize="13.5" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SystemInfoText" FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Text="App and Windows version, FFmpeg, GPU encoders and the last error. You can check everything in the browser before sending." />
+                    </StackPanel>
+                    <CheckBox x:Name="SystemInfoSwitch" Style="{StaticResource Switch}" IsChecked="True" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0" />
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="SendButton" Style="{StaticResource WhiteButton}" IsEnabled="False" Click="Send_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE724;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
+                            <TextBlock Text="Send on GitHub" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="CopyButton" Grid.Column="1" Style="{StaticResource GhostButton}" Height="44" Margin="10,0,0,0" IsEnabled="False"
+                            ToolTip="Copy the report, e.g. to send it on Discord" Click="Copy_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
+                            <TextBlock x:Name="CopyText" Text="Copy" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <TextBlock x:Name="StatusText" FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="2,12,0,0"
+                           Text="Opens your browser with the report filled in. Sending needs a free GitHub account." />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

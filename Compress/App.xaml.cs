@@ -27,7 +27,9 @@ public partial class App : Application
         catch { /* logging is best effort */ }
 
         e.Handled = true;
-        MessageBox.Show(MainWindow, $"Something went wrong:\n\n{e.Exception.Message}\n\nThe app keeps running. Details were saved to:\n{log}",
-            "Compress", MessageBoxButton.OK, MessageBoxImage.Warning);
+        var answer = MessageBox.Show(MainWindow,
+            $"Something went wrong:\n\n{e.Exception.Message}\n\nThe app keeps running. Details were saved to:\n{log}\n\nReport this bug so it can be fixed?",
+            "Compress", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (answer == MessageBoxResult.Yes && MainWindow is MainWindow main) main.ReportError(e.Exception);
     }
 }

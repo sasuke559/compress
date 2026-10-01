@@ -441,7 +441,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="B" CornerRadius="10" BorderThickness="1" BorderBrush="{StaticResource Line2}" Background="#0A0A0A" Padding="10,8">
-                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">

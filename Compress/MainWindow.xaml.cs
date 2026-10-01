@@ -13,6 +13,7 @@ namespace Compress;
 public partial class MainWindow : Window
 {
     readonly AppState _state = new();
+    string? _ffmpegVersion;
 
     public MainWindow()
     {
@@ -36,6 +37,7 @@ public partial class MainWindow : Window
         Loaded += async (_, _) => await InitializeEngineAsync();
         Closing += Window_Closing;
         Ui.MakeDropdown(SettingsPopup, SettingsButton);
+        FeedbackOverlay.SystemInfoProvider = () => Feedback.SystemInfo(_state, _ffmpegVersion, PageTitle.Text);
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -113,7 +115,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var version = await _state.Tools.GetVersionAsync();
+            var version = _ffmpegVersion = await _state.Tools.GetVersionAsync();
             FfmpegInfoText.Text = $"FFmpeg {version}\n{_state.Tools.Directory}";
         }
         catch { /* purely informational */ }
@@ -267,6 +269,21 @@ public partial class MainWindow : Window
     }
 
     // =====================================================================
+    // Feedback
+    // =====================================================================
+
+    void FeedbackButton_Click(object sender, RoutedEventArgs e)
+    {
+        SettingsPopup.IsOpen = false;
+        FeedbackOverlay.Open();
+    }
+
+    /// <summary>Opens the feedback panel as a bug report about an unexpected error (offered by the crash handler).</summary>
+    public void ReportError(Exception ex) =>
+        FeedbackOverlay.Open(FeedbackKind.Bug, $"Error: {ex.Message.Split('\n')[0].Trim()}",
+            "What were you doing when the error appeared?\n\n");
+
+    // =====================================================================
     // Closing
     // =====================================================================
 
@@ -351,7 +368,7 @@ public partial class MainWindow : Window
 
     void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (Keyboard.FocusedElement is TextBox) return;
+        if (Keyboard.FocusedElement is TextBox || FeedbackOverlay.IsOpen) return;
 
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {

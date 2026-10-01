@@ -133,7 +133,9 @@ Built with **C# / WPF on .NET 10** and **[FFmpeg](https://ffmpeg.org)**.
 
 **Where are my settings?** In `%LOCALAPPDATA%\Compress\settings.json`.
 
-**The app says something went wrong.** Details are written to `%LOCALAPPDATA%\Compress\crash.log`. Please attach it when you [open an issue](https://github.com/sasuke559/compress/issues).
+**How do I report a bug or suggest an idea?** Click **Feedback** in the top-right corner of the app. It opens a prefilled [GitHub issue](https://github.com/sasuke559/compress/issues) with your app version and system info.
+
+**The app says something went wrong.** Click **Yes** to report it, or attach `%LOCALAPPDATA%\Compress\crash.log` when you [open an issue](https://github.com/sasuke559/compress/issues).
 
 **Does it upload my videos anywhere?** No. All processing happens locally with FFmpeg.
 
