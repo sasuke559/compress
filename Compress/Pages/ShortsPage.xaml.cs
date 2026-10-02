@@ -1353,6 +1353,7 @@ public partial class ShortsPage : UserControl, IToolPage
             });
             await VideoEngine.RunAsync(_state.Tools, plan, progress, _jobCts.Token);
             ProgressPanel.Stop();
+            Usage.Export("shorts");
             await ShowResultAsync(plan, ProgressPanel.Elapsed);
         }
         catch (OperationCanceledException)

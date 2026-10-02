@@ -111,6 +111,8 @@ dotnet publish Compress/Compress.csproj -c Release -r win-x64 --self-contained t
   -p:EnableCompressionInSingleFile=true -p:PublishReadyToRun=true -p:DebugType=none -o dist
 ```
 
+Feedback and the anonymous usage counters go to a small Cloudflare Worker in [`server/`](server), which forwards them to Discord. The Discord webhook URLs are Worker secrets and never ship in the app.
+
 A source build looks for `ffmpeg.exe` / `ffprobe.exe` next to the app, in an `ffmpeg` sub-folder, in `%LOCALAPPDATA%\Compress\ffmpeg` or on the `PATH`. If none is found, the app offers to download it on first start.
 
 ### Project structure
@@ -133,9 +135,11 @@ Built with **C# / WPF on .NET 10** and **[FFmpeg](https://ffmpeg.org)**.
 
 **Where are my settings?** In `%LOCALAPPDATA%\Compress\settings.json`.
 
-**How do I report a bug or suggest an idea?** Click **Feedback** in the top-right corner of the app. It opens a prefilled [GitHub issue](https://github.com/sasuke559/compress/issues) with your app version and system info.
+**How do I report a bug or suggest an idea?** Click **Feedback** in the top-right corner of the app. Write what happened or what you would like, and click **Send**. The report goes straight to the developer, no account needed. Optional system info (app and Windows version, FFmpeg, GPU encoders, last error) helps fixing bugs.
 
-**The app says something went wrong.** Click **Yes** to report it, or attach `%LOCALAPPDATA%\Compress\crash.log` when you [open an issue](https://github.com/sasuke559/compress/issues).
+**The app says something went wrong.** Click **Yes** to report it. The error details from `%LOCALAPPDATA%\Compress\crash.log` are sent along when *Include system info* is on.
+
+**Does Compress collect data?** Only anonymous counts: that the app was installed, that it was used on a day (once a day at most), and how many videos each tool exported, plus the app version. No ID, no file names, no IP addresses are stored. Turn it off in **Settings → Privacy**.
 
 **Does it upload my videos anywhere?** No. All processing happens locally with FFmpeg.
 

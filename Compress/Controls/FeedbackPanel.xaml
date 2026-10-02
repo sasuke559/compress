@@ -41,13 +41,17 @@
                 <TextBlock x:Name="DescriptionLabel" Text="WHAT HAPPENED?" Style="{StaticResource Label}" />
                 <TextBox x:Name="DescriptionBox" Style="{StaticResource Input}" FontSize="13.5" Height="150" AcceptsReturn="True" TextWrapping="Wrap"
                          VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" MaxLength="4000" Margin="0,0,0,4" TextChanged="Input_TextChanged" />
-                <TextBlock x:Name="DescriptionHint" FontSize="11.5" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="2,0,0,16" />
+                <TextBlock x:Name="DescriptionHint" FontSize="11.5" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="2,0,0,14" />
+
+                <TextBlock Text="CONTACT (OPTIONAL)" Style="{StaticResource Label}" />
+                <TextBox x:Name="ContactBox" Style="{StaticResource Input}" FontSize="13.5" MaxLength="120" Margin="0,0,0,4" />
+                <TextBlock Text="Discord name or email, if you want an answer." FontSize="11.5" Foreground="{StaticResource Text3}" Margin="2,0,0,16" />
 
                 <Grid Margin="0,0,0,20">
                     <StackPanel Margin="0,0,56,0">
                         <TextBlock Text="Include system info" FontSize="13.5" FontWeight="SemiBold" />
                         <TextBlock x:Name="SystemInfoText" FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="0,2,0,0"
-                                   Text="App and Windows version, FFmpeg, GPU encoders and the last error. You can check everything in the browser before sending." />
+                                   Text="App and Windows version, FFmpeg, GPU encoders and the last error. No files, paths or personal data." />
                     </StackPanel>
                     <CheckBox x:Name="SystemInfoSwitch" Style="{StaticResource Switch}" IsChecked="True" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0" />
                 </Grid>
@@ -60,7 +64,7 @@
                     <Button x:Name="SendButton" Style="{StaticResource WhiteButton}" IsEnabled="False" Click="Send_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE724;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
-                            <TextBlock Text="Send on GitHub" />
+                            <TextBlock x:Name="SendText" Text="Send" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="CopyButton" Grid.Column="1" Style="{StaticResource GhostButton}" Height="44" Margin="10,0,0,0" IsEnabled="False"
@@ -72,7 +76,7 @@
                     </Button>
                 </Grid>
                 <TextBlock x:Name="StatusText" FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="2,12,0,0"
-                           Text="Opens your browser with the report filled in. Sending needs a free GitHub account." />
+                           Text="Goes straight to the developer, no account needed." />
             </StackPanel>
         </Border>
     </Grid>

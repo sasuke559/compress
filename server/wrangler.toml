@@ -1,0 +1,16 @@
+name = "compress-stats"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Daily summary to Discord at 06:00 UTC (08:00 German summer time) about the previous UTC day.
+[triggers]
+crons = ["0 6 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "compress-stats"
+database_id = "1f18ea11-bf7f-48dc-aeb7-81d8fd6a670e"
+
+# Secrets (set with `npx wrangler secret put <NAME>`, never committed):
+#   FEEDBACK_WEBHOOK  Discord webhook of the #feedback channel
+#   STATS_WEBHOOK     Discord webhook of the #stats channel

@@ -29,6 +29,8 @@ public partial class MainWindow : Window
 
         SuffixBox.Text = _state.Settings.Suffix;
         MixAudioSwitch.IsChecked = VideoEngine.MixAudioTracks = _state.Settings.MixAudioTracks;
+        UsageSwitch.IsChecked = _state.Settings.UsageStats;
+        Usage.Start(_state.Settings);
         PreviewAudio.Cleanup(); // leftovers from a session that did not close normally
         PreviewProxy.Cleanup();
         UpdateOutputUi();
@@ -251,6 +253,12 @@ public partial class MainWindow : Window
             _state.Settings.Save();
         }
         UpdateOutputUi();
+    }
+
+    void UsageSwitch_Click(object sender, RoutedEventArgs e)
+    {
+        _state.Settings.UsageStats = UsageSwitch.IsChecked == true;
+        _state.Settings.Save();
     }
 
     void MixAudioSwitch_Click(object sender, RoutedEventArgs e)

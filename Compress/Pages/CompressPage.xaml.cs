@@ -447,6 +447,7 @@ public partial class CompressPage : UserControl, IToolPage
                 retryNote = string.Join(" ", new[] { retryNote, note }.Where(n => n is not null));
                 reopen = note is null ? resultPath : video.Path;
             }
+            Usage.Export("compress");
             ShowResult(reference, plan, resultPath, ProgressPanel.Elapsed, retryNote, replaced: reopen is not null);
         }
         catch (OperationCanceledException)

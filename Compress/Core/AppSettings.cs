@@ -21,6 +21,11 @@ public sealed class AppSettings
     /// <summary>Page shown on start: Compress, Cutter, Resize, Shorts or Converter.</summary>
     public string LastPage { get; set; } = "Compress";
 
+    // Anonymous usage statistics (see Core/Usage.cs)
+    public bool UsageStats { get; set; } = true;
+    public bool UsageInstallSent { get; set; }
+    public string? UsageLastActiveDay { get; set; }
+
     // Last used compression options, restored on the next start.
     public QualityMode Mode { get; set; } = QualityMode.Medium;
     public CodecChoice Codec { get; set; } = CodecChoice.H264;

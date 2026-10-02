@@ -115,6 +115,17 @@
                                               Click="MixAudioSwitch_Click" />
                                 </Grid>
 
+                                <TextBlock Text="PRIVACY" Style="{StaticResource Label}" />
+                                <Grid Margin="0,0,0,18">
+                                    <StackPanel Margin="0,0,56,0">
+                                        <TextBlock Text="Anonymous usage statistics" FontSize="13.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Counts only that Compress was used today and how many videos were exported per tool. No ID, no file names, no personal data."
+                                                   FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <CheckBox x:Name="UsageSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0"
+                                              Click="UsageSwitch_Click" />
+                                </Grid>
+
                                 <TextBlock Text="ENGINE" Style="{StaticResource Label}" />
                                 <Border Style="{StaticResource Tile}">
                                     <StackPanel>

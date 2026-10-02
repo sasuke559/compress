@@ -366,6 +366,7 @@ public partial class ConverterPage : UserControl, IToolPage
                 await VideoEngine.RunAsync(_state.Tools, plan, progress, _jobCts.Token);
                 item.OutputPath = await FinishOutputAsync(item, plan.OutputPath, replace);
                 item.Status = QueueStatus.Done;
+                Usage.Export("converter");
                 item.StatusText = $"Done · {Format.Size(new FileInfo(item.OutputPath).Length)}";
                 _lastOutput = item.OutputPath;
             }

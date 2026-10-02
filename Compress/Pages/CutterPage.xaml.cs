@@ -918,6 +918,7 @@ public partial class CutterPage : UserControl, IToolPage
             });
             await VideoEngine.RunAsync(_state.Tools, plan, progress, _jobCts.Token);
             ProgressPanel.Stop();
+            Usage.Export("cutter");
 
             string resultPath = plan.OutputPath;
             string? note = null;

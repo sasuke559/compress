@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -32,7 +31,7 @@ public partial class FeedbackPanel : UserControl
         if (kind is { } k) (k == FeedbackKind.Idea ? KindIdea : KindBug).IsChecked = true;
         if (title is not null) TitleBox.Text = title;
         if (description is not null) DescriptionBox.Text = description;
-        StatusText.Text = "Opens your browser with the report filled in. Sending needs a free GitHub account.";
+        if (!_sending) SetStatus("Goes straight to the developer, no account needed.");
         CopyText.Text = "Copy";
 
         Visibility = Visibility.Visible;
@@ -74,21 +73,28 @@ public partial class FeedbackPanel : UserControl
 
     void Input_TextChanged(object sender, TextChangedEventArgs e)
     {
+        if (SendText is null) return; // fires during InitializeComponent
         bool ready = TitleBox.Text.Trim().Length >= 3 && DescriptionBox.Text.Trim().Length >= 5;
-        SendButton.IsEnabled = CopyButton.IsEnabled = ready;
+        SendButton.IsEnabled = ready && !_sending;
+        CopyButton.IsEnabled = ready;
+        if (ready && SendText.Text == "Sent") SendText.Text = "Send";
     }
 
-    (string Title, string Body) BuildReport()
+    bool _sending;
+
+    string? SystemInfo => SystemInfoSwitch.IsChecked == true ? SystemInfoProvider?.Invoke() : null;
+
+    void SetStatus(string text, bool error = false)
     {
-        string? info = SystemInfoSwitch.IsChecked == true ? SystemInfoProvider?.Invoke() : null;
-        return (Feedback.IssueTitle(Kind, TitleBox.Text), Feedback.Body(Kind, DescriptionBox.Text, info));
+        StatusText.Text = text;
+        StatusText.Foreground = (System.Windows.Media.Brush)FindResource(error ? "Danger" : "Text3");
     }
 
-    bool CopyToClipboard(string title, string body)
+    bool CopyToClipboard()
     {
         try
         {
-            Clipboard.SetText($"{title}\n\n{body}");
+            Clipboard.SetText(Feedback.PlainText(Kind, TitleBox.Text, DescriptionBox.Text, ContactBox.Text, SystemInfo));
             return true;
         }
         catch
@@ -97,25 +103,43 @@ public partial class FeedbackPanel : UserControl
         }
     }
 
-    void Send_Click(object sender, RoutedEventArgs e)
+    async void Send_Click(object sender, RoutedEventArgs e)
     {
-        var (title, body) = BuildReport();
-        CopyToClipboard(title, body); // backup in case the browser form gets lost or the URL had to be shortened
+        if (_sending) return;
+        if (Feedback.CooldownLeft > 0)
+        {
+            SetStatus($"Thanks! Please wait {Feedback.CooldownLeft} s before sending another report.");
+            return;
+        }
+
+        _sending = true;
+        SendButton.IsEnabled = false;
+        SendText.Text = "Sending…";
+        SetStatus("Sending your report…");
         try
         {
-            Process.Start(new ProcessStartInfo(Feedback.GitHubIssueUrl(title, body)) { UseShellExecute = true });
-            StatusText.Text = "Your browser opened with the report. Click \"Create\" there to send it. A copy is also on your clipboard.";
+            await Feedback.SendAsync(Kind, TitleBox.Text, DescriptionBox.Text, ContactBox.Text, SystemInfo);
+            TitleBox.Clear();
+            DescriptionBox.Clear();
+            SetStatus("Sent, thank you! Every report is read.");
+            SendText.Text = "Sent";
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"Could not open the browser ({ex.Message}). The report is on your clipboard instead.";
+            bool copied = CopyToClipboard();
+            SetStatus($"Could not send ({ex.Message}){(copied ? " The report was copied to your clipboard, so nothing is lost." : "")}", error: true);
+            SendText.Text = "Send";
+            Input_TextChanged(this, null!);
+        }
+        finally
+        {
+            _sending = false;
         }
     }
 
     void Copy_Click(object sender, RoutedEventArgs e)
     {
-        var (title, body) = BuildReport();
-        CopyText.Text = CopyToClipboard(title, body) ? "Copied" : "Failed";
+        CopyText.Text = CopyToClipboard() ? "Copied" : "Failed";
     }
 
     void Close_Click(object sender, RoutedEventArgs e) => Close();
