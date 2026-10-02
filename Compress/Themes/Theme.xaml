@@ -57,6 +57,32 @@
         </Setter>
     </Style>
 
+    <!-- One row in a dropdown menu (Cutter zoom levels, subtitle languages); Tag = "current" marks the active one -->
+    <Style x:Key="MenuOption" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+        <Setter Property="Foreground" Value="{StaticResource Text2}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="B" CornerRadius="8" Background="Transparent" Padding="10,6">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="B" Property="Background" Value="#222222" />
+                            <Setter Property="Foreground" Value="{StaticResource Text}" />
+                        </Trigger>
+                        <Trigger Property="Tag" Value="current">
+                            <Setter Property="Foreground" Value="{StaticResource Accent}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Green pill with a white ring (the big "Select Video" button) -->
     <Style x:Key="PillAccentButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
         <Setter Property="Foreground" Value="#0A0A0A" />

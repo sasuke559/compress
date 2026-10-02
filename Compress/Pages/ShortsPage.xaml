@@ -56,6 +56,7 @@
                         </Border.Effect>
                         <Grid x:Name="PhoneHost" SizeChanged="PhoneHost_SizeChanged">
                             <Canvas x:Name="PhoneCanvas" Background="Transparent" MouseLeftButtonDown="PhoneCanvas_MouseDown" />
+                            <controls:CaptionView x:Name="CaptionPreview" IsHitTestVisible="False" />
                             <Canvas x:Name="AppOverlayLayer" IsHitTestVisible="False" />
                             <Canvas x:Name="GuideLayer" IsHitTestVisible="False">
                                 <Rectangle x:Name="GuideV" Width="1" Fill="{StaticResource Accent}" Visibility="Collapsed" />
@@ -229,6 +230,95 @@
                                 <CheckBox x:Name="RemoveAudioSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Center"
                                           Click="Options_Changed" />
                             </Grid>
+
+                            <!-- Subtitles: only made when the user asks for them -->
+                            <TextBlock Text="SUBTITLES" Style="{StaticResource Label}" Margin="0,0,0,8" />
+                            <Border Style="{StaticResource Tile}" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <!-- Not made yet -->
+                                    <StackPanel x:Name="SubIdlePanel">
+                                        <TextBlock Style="{StaticResource CardText}" Margin="0,0,0,12"
+                                                   Text="Turns what you say into big TikTok captions, word by word. Runs on your PC, nothing is uploaded." />
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Language" FontSize="12.5" Foreground="{StaticResource Text2}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                            <Button x:Name="SubLanguageButton" Grid.Column="1" Style="{StaticResource ChipButton}" Margin="0" HorizontalAlignment="Right">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock x:Name="SubLanguageText" Text="Detect automatically" />
+                                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="9" Margin="8,1,0,0" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Popup x:Name="SubLanguagePopup" PlacementTarget="{Binding ElementName=SubLanguageButton}" Placement="Bottom"
+                                                   VerticalOffset="6" AllowsTransparency="True" PopupAnimation="Fade">
+                                                <Border Background="#161616" BorderBrush="{StaticResource Line2}" BorderThickness="1" CornerRadius="12" Padding="6"
+                                                        MinWidth="190" Margin="0,0,10,10">
+                                                    <StackPanel x:Name="SubLanguageList" />
+                                                </Border>
+                                            </Popup>
+                                        </Grid>
+                                        <StackPanel x:Name="SubVoicePanel" Margin="0,0,0,12" Visibility="Collapsed">
+                                            <TextBlock Text="Listen to" FontSize="12.5" Foreground="{StaticResource Text2}" Margin="0,0,0,6" />
+                                            <Border Style="{StaticResource SegmentHost}" Margin="0">
+                                                <UniformGrid Rows="1">
+                                                    <RadioButton x:Name="SubVoiceMic" Style="{StaticResource Segment}" GroupName="ShortsSubVoice" Content="Microphone" IsChecked="True"
+                                                                 ToolTip="Only your voice (second audio track)" />
+                                                    <RadioButton x:Name="SubVoiceAll" Style="{StaticResource Segment}" GroupName="ShortsSubVoice" Content="All audio"
+                                                                 ToolTip="Game sound and microphone together" />
+                                                </UniformGrid>
+                                            </Border>
+                                        </StackPanel>
+                                        <Button x:Name="SubGenerateButton" Style="{StaticResource GhostButton}" Height="40" HorizontalAlignment="Stretch" Click="SubGenerate_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE7F0;" Style="{StaticResource Icon}" FontSize="14" Foreground="{StaticResource Accent}" Margin="0,0,8,0" />
+                                                <TextBlock Text="Generate subtitles" FontSize="13" FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Button>
+                                        <TextBlock x:Name="SubModelNote" FontSize="11.5" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="2,8,0,0"
+                                                   Text="The first time, the speech model (190 MB) is downloaded once." />
+                                        <TextBlock x:Name="SubErrorText" FontSize="12" Foreground="{StaticResource Danger}" TextWrapping="Wrap" Margin="2,8,0,0" Visibility="Collapsed" />
+                                    </StackPanel>
+
+                                    <!-- Working -->
+                                    <StackPanel x:Name="SubWorkingPanel" Visibility="Collapsed">
+                                        <TextBlock x:Name="SubStatusText" Text="Listening…" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                        <ProgressBar x:Name="SubProgress" Style="{StaticResource Progress}" Maximum="1" />
+                                        <Button Style="{StaticResource LinkButton}" Content="Cancel" FontSize="12" HorizontalAlignment="Left" Margin="-4,6,0,0"
+                                                Click="SubCancel_Click" />
+                                    </StackPanel>
+
+                                    <!-- Done: check and fix the text, choose where it goes -->
+                                    <StackPanel x:Name="SubDonePanel" Visibility="Collapsed">
+                                        <Grid Margin="0,0,0,12">
+                                            <StackPanel Margin="0,0,50,0">
+                                                <TextBlock Text="Burn into the video" FontSize="13.5" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="SubSummaryText" FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                            <CheckBox x:Name="SubBurnSwitch" Style="{StaticResource Switch}" IsChecked="True" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                      Click="SubBurn_Click" />
+                                        </Grid>
+                                        <Border Style="{StaticResource SegmentHost}" Margin="0,0,0,12">
+                                            <UniformGrid Rows="1">
+                                                <RadioButton x:Name="SubPosTop" Style="{StaticResource Segment}" GroupName="ShortsSubPos" Content="Top" Checked="SubPosition_Checked" />
+                                                <RadioButton x:Name="SubPosMiddle" Style="{StaticResource Segment}" GroupName="ShortsSubPos" Content="Middle" Checked="SubPosition_Checked" />
+                                                <RadioButton x:Name="SubPosBottom" Style="{StaticResource Segment}" GroupName="ShortsSubPos" Content="Bottom" IsChecked="True"
+                                                             Checked="SubPosition_Checked" />
+                                            </UniformGrid>
+                                        </Border>
+                                        <TextBlock Text="Click a line to jump there, edit it to fix a word, empty it to remove it." FontSize="11.5"
+                                                   Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="2,0,0,8" />
+                                        <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                            <StackPanel x:Name="SubLinesPanel" />
+                                        </ScrollViewer>
+                                        <StackPanel Orientation="Horizontal" Margin="-4,8,0,0">
+                                            <Button Style="{StaticResource LinkButton}" Content="Make again" FontSize="12" Click="SubRedo_Click" />
+                                            <Button Style="{StaticResource LinkButton}" Content="Remove subtitles" FontSize="12" Margin="8,0,0,0" Click="SubRemove_Click" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
 
                             <Border Style="{StaticResource Tile}" Margin="0,0,0,14">
                                 <Grid>

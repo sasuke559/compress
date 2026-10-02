@@ -73,6 +73,8 @@ public sealed class EncodePlan
     public required string WorkDir { get; init; }
     public required string OutputPath { get; init; }
     public required string EncoderLabel { get; init; }
+    /// <summary>Text files the passes read from the work folder (e.g. subtitles), written before the first pass.</summary>
+    public IReadOnlyDictionary<string, string>? WorkFiles { get; init; }
     public TimeSpan Duration { get; init; }
     public int Width { get; init; }
     public int Height { get; init; }
@@ -640,6 +642,8 @@ public static partial class VideoEngine
         Directory.CreateDirectory(plan.WorkDir);
         try
         {
+            foreach (var (name, content) in plan.WorkFiles ?? new Dictionary<string, string>())
+                await File.WriteAllTextAsync(Path.Combine(plan.WorkDir, name), content, new System.Text.UTF8Encoding(false), ct);
             for (int i = 0; i < plan.Passes.Count; i++)
             {
                 int pass = i;

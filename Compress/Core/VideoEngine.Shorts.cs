@@ -11,10 +11,14 @@ public sealed class ShortsOptions
     public bool Limit60 { get; init; } = true;
     public bool RemoveAudio { get; init; }
     public bool UseHardware { get; init; }
+    /// <summary>ASS captions to burn in (see <see cref="Subtitles.BuildAss"/>), null for none.</summary>
+    public string? SubtitlesAss { get; init; }
 }
 
 public static partial class VideoEngine
 {
+    const string SubtitlesFile = "captions.ass";
+
     /// <summary>
     /// Builds the 1080×1920 composition: gameplay crop (optionally over a blurred or black background)
     /// with every HUD element cropped from the source and overlaid at its spot.
@@ -88,6 +92,12 @@ public static partial class VideoEngine
             graph.Add($"{current}[h{i}]overlay={N(dst.X)}:{N(dst.Y)}[o{i}]");
             current = $"[o{i}]";
         }
+        // Captions go on top of everything; FFmpeg runs in the work folder, so a plain file name avoids Windows path escaping.
+        if (o.SubtitlesAss is not null)
+        {
+            graph.Add($"{current}subtitles={SubtitlesFile}[sub]");
+            current = "[sub]";
+        }
         graph.Add($"{current}format={(vendor == HwVendor.Intel ? "nv12" : "yuv420p")}[out]");
 
         bool keepAudio = v.HasAudio && !o.RemoveAudio;
@@ -119,6 +129,7 @@ public static partial class VideoEngine
         return new EncodePlan
         {
             Passes = [args],
+            WorkFiles = o.SubtitlesAss is null ? null : new Dictionary<string, string> { [SubtitlesFile] = o.SubtitlesAss },
             WorkDir = workDir,
             OutputPath = outputPath,
             EncoderLabel = $"H.264 · {Format.Vendor(vendor)}",

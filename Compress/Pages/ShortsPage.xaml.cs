@@ -86,6 +86,7 @@ public partial class ShortsPage : UserControl, IToolPage
         if (state.Settings.ShortsLayout is { } last) _layout = last.Clone();
         BuildGameTiles();
         UpdateUndoButtons();
+        InitSubtitles();
     }
 
     AppUi Platform => AppUi.For(_state.Settings.ShortsPlatform);
@@ -105,6 +106,7 @@ public partial class ShortsPage : UserControl, IToolPage
     public void Shutdown()
     {
         _jobCts?.Cancel();
+        _subCts?.Cancel();
         if (_persistTimer.IsEnabled) PersistNow();
         Player.Close();
         Ui.TryDelete(_posterFile);
@@ -168,6 +170,7 @@ public partial class ShortsPage : UserControl, IToolPage
             FileTitle.Text = $"{Path.GetFileName(path)}  ·  {Format.Size(info.SizeBytes)}";
             FileMeta.Text = $"{info.DisplayWidth} × {info.DisplayHeight}  ·  {Format.Fps(info.Fps)} fps  ·  {Format.Codec(info.VideoCodec)}  ·  {Format.Clock(info.Duration)}";
             RemoveAudioSwitch.IsEnabled = info.HasAudio;
+            ResetSubtitles(info);
 
             // Keep the layout from the last short (same game, same HUD); start from the chosen game otherwise.
             if (_state.Settings.ShortsLayout is null && FindPreset(_state.Settings.ShortsGame) is { } preset)
@@ -1299,6 +1302,7 @@ public partial class ShortsPage : UserControl, IToolPage
             Limit60 = Limit60Switch.IsChecked == true,
             RemoveAudio = RemoveAudioSwitch.IsChecked == true && RemoveAudioSwitch.IsEnabled,
             UseHardware = _state.Settings.UseHardware && _state.Encoders.H264 != HwVendor.None,
+            SubtitlesAss = SubtitlesForExport(video),
         };
         return VideoEngine.CreateShortsPlan(video, _layout, options, _state.Encoders,
             _state.Settings.BuildOutputPath(video.Path, "_short", ".mp4"), workDir);
@@ -1312,7 +1316,7 @@ public partial class ShortsPage : UserControl, IToolPage
             var plan = CreatePlan(_video, Path.GetTempPath());
             SummaryOutput.Text = $"1080 × 1920 · {Format.Fps(plan.Fps)} fps";
             SummarySize.Text = "≈ " + Format.Size(plan.EstimatedBytes);
-            ExportButton.IsEnabled = true;
+            ExportButton.IsEnabled = !GeneratingSubtitles;
         }
         catch (InvalidOperationException)
         {
@@ -1323,7 +1327,7 @@ public partial class ShortsPage : UserControl, IToolPage
 
     async void ExportButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_video is null || _state.Tools is null || IsBusy) return;
+        if (_video is null || _state.Tools is null || IsBusy || GeneratingSubtitles) return;
 
         var video = _video;
         EncodePlan plan;

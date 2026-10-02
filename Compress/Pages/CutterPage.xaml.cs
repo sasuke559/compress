@@ -415,7 +415,7 @@ public partial class CutterPage : UserControl, IToolPage
         {
             var option = new Button
             {
-                Style = (Style)FindResource("ZoomOption"),
+                Style = (Style)FindResource("MenuOption"),
                 Tag = Math.Abs(Zoom - level) < 0.05 * level ? "current" : null,
                 Content = new DockPanel
                 {

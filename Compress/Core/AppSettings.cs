@@ -21,6 +21,9 @@ public sealed class AppSettings
     /// <summary>Page shown on start: Compress, Cutter, Resize, Shorts or Converter.</summary>
     public string LastPage { get; set; } = "Compress";
 
+    /// <summary>Download new versions from GitHub in the background (see Core/Updater.cs).</summary>
+    public bool AutoUpdate { get; set; } = true;
+
     // Anonymous usage statistics (see Core/Usage.cs)
     public bool UsageStats { get; set; } = true;
     public bool UsageInstallSent { get; set; }
@@ -55,6 +58,9 @@ public sealed class AppSettings
     public bool ShortsSafeZones { get; set; } = true;
     /// <summary>App the short is made for; decides where its buttons and caption are kept clear.</summary>
     public ShortsPlatform ShortsPlatform { get; set; } = ShortsPlatform.TikTok;
+    /// <summary>Spoken language for subtitles ("auto" or a Whisper code) and where they sit.</summary>
+    public string SubtitleLanguage { get; set; } = "auto";
+    public SubtitlePosition SubtitlePosition { get; set; } = SubtitlePosition.Bottom;
 
     public static AppSettings Load()
     {

@@ -31,14 +31,26 @@ public partial class MainWindow : Window
         MixAudioSwitch.IsChecked = VideoEngine.MixAudioTracks = _state.Settings.MixAudioTracks;
         UsageSwitch.IsChecked = _state.Settings.UsageStats;
         Usage.Start(_state.Settings);
+        AutoUpdateSwitch.IsChecked = _state.Settings.AutoUpdate;
+        ContentRendered += async (_, _) =>
+        {
+            await Task.Delay(2000);
+            Updater.MarkHealthy();
+        };
+        UpdateStatusText.Text = $"Version {Feedback.AppVersion}";
         PreviewAudio.Cleanup(); // leftovers from a session that did not close normally
         PreviewProxy.Cleanup();
         UpdateOutputUi();
         (_state.Settings.LastPage switch { "Cutter" => NavCutter, "Resize" => NavResize, "Shorts" => NavShorts, "Converter" => NavConverter, _ => NavCompress }).IsChecked = true;
 
         Loaded += async (_, _) => await InitializeEngineAsync();
+        Loaded += (_, _) => StartUpdateChecks();
         Closing += Window_Closing;
-        Ui.MakeDropdown(SettingsPopup, SettingsButton);
+        Ui.MakeDropdown(SettingsPopup, SettingsButton, () =>
+        {
+            SettingsScroll.MaxHeight = Math.Max(240, ActualHeight - 150);
+            return true;
+        });
         FeedbackOverlay.SystemInfoProvider = () => Feedback.SystemInfo(_state, _ffmpegVersion, PageTitle.Text);
     }
 
@@ -290,6 +302,134 @@ public partial class MainWindow : Window
     public void ReportError(Exception ex) =>
         FeedbackOverlay.Open(FeedbackKind.Bug, $"Error: {ex.Message.Split('\n')[0].Trim()}",
             "What were you doing when the error appeared?\n\n");
+
+    // =====================================================================
+    // Updates
+    // =====================================================================
+
+    enum UpdateStage { None, Available, Downloading, Ready, Failed }
+
+    UpdateStage _updateStage;
+    UpdateInfo? _update;
+    bool _restartAfterClose;
+
+    void StartUpdateChecks()
+    {
+        _ = CheckForUpdateAsync(manual: false);
+        // Long sessions also learn about new releases.
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(6) };
+        timer.Tick += (_, _) => _ = CheckForUpdateAsync(manual: false);
+        timer.Start();
+    }
+
+    async Task CheckForUpdateAsync(bool manual)
+    {
+        if (_updateStage is UpdateStage.Downloading or UpdateStage.Ready) return;
+        if (manual) UpdateStatusText.Text = "Checking…";
+        try
+        {
+            _update = await Updater.CheckAsync();
+        }
+        catch
+        {
+            if (manual) UpdateStatusText.Text = $"Version {Feedback.AppVersion} · could not reach GitHub";
+            return; // offline: try again later
+        }
+
+        if (_update is null)
+        {
+            UpdateStatusText.Text = $"Version {Feedback.AppVersion} · up to date";
+            return;
+        }
+
+        UpdateStatusText.Text = $"Version {Feedback.AppVersion} · {_update.Version.ToString(3)} available";
+        if (Updater.CanSelfUpdate && (_state.Settings.AutoUpdate || manual)) await DownloadUpdateAsync();
+        else SetUpdateStage(UpdateStage.Available);
+    }
+
+    async Task DownloadUpdateAsync()
+    {
+        if (_update is null) return;
+        SetUpdateStage(UpdateStage.Downloading);
+        var progress = new Progress<double>(p => UpdateButtonText.Text = $"Downloading update {p:P0}");
+        try
+        {
+            await Updater.DownloadAndInstallAsync(_update, progress);
+            SetUpdateStage(UpdateStage.Ready);
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText.Text = $"Update failed: {ex.Message}";
+            SetUpdateStage(UpdateStage.Failed);
+        }
+    }
+
+    void SetUpdateStage(UpdateStage stage)
+    {
+        _updateStage = stage;
+        var version = _update?.Version.ToString(3);
+        UpdateButton.Visibility = stage == UpdateStage.None ? Visibility.Collapsed : Visibility.Visible;
+        UpdateButton.IsHitTestVisible = stage != UpdateStage.Downloading;
+        UpdateButton.Opacity = stage == UpdateStage.Downloading ? 0.75 : 1;
+        UpdateIcon.Text = stage == UpdateStage.Ready ? "\uE72C" : "\uE896"; // refresh / download
+        switch (stage)
+        {
+            case UpdateStage.Available:
+                UpdateButtonText.Text = $"Update to {version}";
+                UpdateButton.ToolTip = Updater.CanSelfUpdate ? "Download and install the new version" : "Open the download page";
+                break;
+            case UpdateStage.Downloading:
+                UpdateButtonText.Text = "Downloading update";
+                UpdateButton.ToolTip = null;
+                break;
+            case UpdateStage.Ready:
+                UpdateButtonText.Text = "Restart to update";
+                UpdateButton.ToolTip = $"Compress {version} is installed. Restart now, or it starts the next time you open Compress.";
+                UpdateStatusText.Text = $"Version {version} installed · restart to use it";
+                break;
+            case UpdateStage.Failed:
+                UpdateButtonText.Text = $"Get {version}";
+                UpdateButton.ToolTip = "Automatic update failed. Open the download page.";
+                break;
+        }
+    }
+
+    async void UpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        switch (_updateStage)
+        {
+            case UpdateStage.Available when Updater.CanSelfUpdate:
+                await DownloadUpdateAsync();
+                break;
+            case UpdateStage.Available or UpdateStage.Failed when _update is not null:
+                Updater.OpenReleasePage(_update.PageUrl);
+                break;
+            case UpdateStage.Ready:
+                _restartAfterClose = true;
+                Close(); // asks first if a video is still being processed
+                _restartAfterClose = false; // still open: the user chose to keep working
+                break;
+        }
+    }
+
+    void AutoUpdateSwitch_Click(object sender, RoutedEventArgs e)
+    {
+        _state.Settings.AutoUpdate = AutoUpdateSwitch.IsChecked == true;
+        _state.Settings.Save();
+    }
+
+    async void CheckUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        CheckUpdateButton.IsEnabled = false;
+        await CheckForUpdateAsync(manual: true);
+        CheckUpdateButton.IsEnabled = true;
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        if (_restartAfterClose) Updater.StartNewVersion();
+    }
 
     // =====================================================================
     // Closing

@@ -58,6 +58,7 @@ Game clips straight out of the NVIDIA app, OBS or Medal are huge, often recorded
 - Turns landscape gameplay into a **1080×1920** vertical video for TikTok, Instagram Reels and YouTube Shorts.
 - Cuts out HUD elements (minimap, health, ammo, kill feed…) and places them in the vertical frame. Presets for Rust, Wardogs, Battlefield, Warzone, Fortnite, Valorant and CS2, or build your own.
 - Optional overlay of the app's buttons and caption, so nothing important ends up hidden behind them.
+- **Subtitles at the push of a button**: turns what you say into big TikTok-style captions with the spoken word highlighted. Speech recognition ([Whisper](https://github.com/ggerganov/whisper.cpp)) runs on your PC, nothing is uploaded. Pick the language and whether to listen to your mic or all audio, fix any word before exporting, place the captions at the top, middle or bottom. The speech model (190 MB) is downloaded the first time.
 
 ### Convert: any format, zero hassle
 <img src="docs/screenshots/convert.png" alt="Convert" width="820" />
@@ -111,6 +112,8 @@ dotnet publish Compress/Compress.csproj -c Release -r win-x64 --self-contained t
   -p:EnableCompressionInSingleFile=true -p:PublishReadyToRun=true -p:DebugType=none -o dist
 ```
 
+Releases are signed: the app only installs updates whose `Compress.exe.sig` matches the public key in `Core/Updater.cs`. Sign a build with `dotnet run tools/sign-release.cs -- sign dist/Compress.exe` (the private key stays in `%USERPROFILE%\.compress`, see the script) and upload `Compress.exe`, `Compress.exe.sig` and the zip to the release.
+
 Feedback and the anonymous usage counters go to a small Cloudflare Worker in [`server/`](server), which forwards them to Discord. The Discord webhook URLs are Worker secrets and never ship in the app.
 
 A source build looks for `ffmpeg.exe` / `ffprobe.exe` next to the app, in an `ffmpeg` sub-folder, in `%LOCALAPPDATA%\Compress\ffmpeg` or on the `PATH`. If none is found, the app offers to download it on first start.
@@ -139,6 +142,10 @@ Built with **C# / WPF on .NET 10** and **[FFmpeg](https://ffmpeg.org)**.
 
 **The app says something went wrong.** Click **Yes** to report it. The error details from `%LOCALAPPDATA%\Compress\crash.log` are sent along when *Include system info* is on.
 
+**How do I update?** Compress checks GitHub for a new version when it starts. It downloads the update in the background and shows **Restart to update** in the header; the new version also starts the next time you open the app. Turn it off in **Settings → Updates**. Versions before 1.0.3 have to be updated once by hand.
+
+**Are updates safe?** Every update is signed by the developer, and Compress refuses files without a valid signature, even if they come from the official download page. If a new version ever fails to start, Compress goes back to the previous one by itself and skips that update.
+
 **Does Compress collect data?** Only anonymous counts: that the app was installed, that it was used on a day (once a day at most), and how many videos each tool exported, plus the app version. No ID, no file names, no IP addresses are stored. Turn it off in **Settings → Privacy**.
 
 **Does it upload my videos anywhere?** No. All processing happens locally with FFmpeg.
@@ -147,4 +154,4 @@ Built with **C# / WPF on .NET 10** and **[FFmpeg](https://ffmpeg.org)**.
 
 © 2026 sasuke559. All rights reserved. The source code is published for reference; please ask before reusing it.
 
-The release download bundles **FFmpeg** ([BtbN build](https://github.com/BtbN/FFmpeg-Builds)), which is licensed under the **GNU GPL v3**; its license text and source links are included in the `ffmpeg` folder of the download. The app runs FFmpeg as a separate program.
+The release download bundles **FFmpeg** ([BtbN build](https://github.com/BtbN/FFmpeg-Builds)), which is licensed under the **GNU GPL v3**; its license text and source links are included in the `ffmpeg` folder of the download. The app runs FFmpeg as a separate program. Subtitles use [Whisper.net](https://github.com/sandrohanea/whisper.net) and [whisper.cpp](https://github.com/ggerganov/whisper.cpp) (MIT, see `LICENSE-whisper.txt` in the download).

@@ -67,6 +67,13 @@
                                 <TextBlock x:Name="EngineBadgeText" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Text2}" />
                             </StackPanel>
                         </Border>
+                        <Button x:Name="UpdateButton" Style="{StaticResource PillAccentButton}" Height="36" Padding="16,0" Margin="0,0,12,0"
+                                Visibility="Collapsed" Click="UpdateButton_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="UpdateIcon" Text="&#xE896;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
+                                <TextBlock x:Name="UpdateButtonText" Text="Update" FontSize="12.5" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Button>
                         <Button x:Name="FeedbackButton" Style="{StaticResource GhostButton}" Height="36" Padding="14,0" Margin="0,0,12,0"
                                 ToolTip="Report a bug or suggest an idea" Click="FeedbackButton_Click">
                             <StackPanel Orientation="Horizontal">
@@ -81,11 +88,13 @@
                     <!-- Settings flyout -->
                     <Popup x:Name="SettingsPopup" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom"
                            HorizontalOffset="-340" VerticalOffset="10" AllowsTransparency="True" PopupAnimation="Fade">
-                        <Border Width="380" Background="#121212" BorderBrush="{StaticResource Line2}" BorderThickness="1" CornerRadius="16" Padding="20" Margin="0,0,12,12">
+                        <Border Width="380" Background="#121212" BorderBrush="{StaticResource Line2}" BorderThickness="1" CornerRadius="16" Padding="0,20" Margin="0,0,12,12">
                             <Border.Effect>
                                 <DropShadowEffect BlurRadius="30" ShadowDepth="8" Opacity="0.6" Color="Black" />
                             </Border.Effect>
-                            <StackPanel>
+                            <!-- Scrolls when the window is too short for all settings (MaxHeight set when opening) -->
+                            <ScrollViewer x:Name="SettingsScroll" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="20,0">
                                 <TextBlock Text="Settings" Style="{StaticResource Heading}" FontSize="18" Margin="0,0,0,18" />
 
                                 <TextBlock Text="SAVE TO" Style="{StaticResource Label}" />
@@ -115,6 +124,27 @@
                                               Click="MixAudioSwitch_Click" />
                                 </Grid>
 
+                                <TextBlock Text="UPDATES" Style="{StaticResource Label}" />
+                                <Grid Margin="0,0,0,8">
+                                    <StackPanel Margin="0,0,56,0">
+                                        <TextBlock Text="Install updates automatically" FontSize="13.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="New versions download in the background and start the next time you open Compress."
+                                                   FontSize="12" Foreground="{StaticResource Text3}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <CheckBox x:Name="AutoUpdateSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0"
+                                              Click="AutoUpdateSwitch_Click" />
+                                </Grid>
+                                <Grid Margin="0,0,0,18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="UpdateStatusText" Foreground="{StaticResource Text3}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <Button x:Name="CheckUpdateButton" Grid.Column="1" Style="{StaticResource ChipButton}" Content="Check now" Margin="0"
+                                            Click="CheckUpdate_Click" />
+                                </Grid>
+
                                 <TextBlock Text="PRIVACY" Style="{StaticResource Label}" />
                                 <Grid Margin="0,0,0,18">
                                     <StackPanel Margin="0,0,56,0">
@@ -136,6 +166,7 @@
                                 <Button Style="{StaticResource LinkButton}" Content="Use a different ffmpeg.exe…" HorizontalAlignment="Left" Margin="-4,8,0,0"
                                         FontSize="12" Click="LocateFfmpeg_Click" />
                             </StackPanel>
+                            </ScrollViewer>
                         </Border>
                     </Popup>
                 </Grid>
