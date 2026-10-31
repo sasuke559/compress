@@ -111,8 +111,13 @@ public partial class MainWindow : Window
         VideoPlayer.PreviewSourceProvider = path => PreviewProxy.GetAsync(tools, path);
 
         // "Open with" / files passed on the command line.
-        var files = Environment.GetCommandLineArgs().Skip(1).Where(File.Exists).ToList();
-        if (files.Count > 0) _ = ActivePage.LoadVideosAsync(files);
+        var args = Environment.GetCommandLineArgs().Skip(1).ToList();
+        if (args.FirstOrDefault(Directory.Exists) is { } folder)
+        {
+            NavCompress.IsChecked = true; // folders are compressed as a whole
+            _ = CompressView.LoadFolderAsync(folder);
+        }
+        else if (args.Where(File.Exists).ToList() is { Count: > 0 } files) _ = ActivePage.LoadVideosAsync(files);
 
         _state.DetectingEncoders = true;
         UpdateEngineUi();
@@ -482,6 +487,8 @@ public partial class MainWindow : Window
             : ActiveView == ResizeView ? "Drop to add videos to the queue"
             : ActiveView == ShortsView ? "Drop to make a short"
             : ActiveView == ConverterView ? "Drop to add videos to convert"
+            : DroppedFiles(e).Any(Directory.Exists) ? "Drop to compress every video in this folder"
+            : DroppedFiles(e).Count(Ui.IsVideo) > 1 ? "Drop to compress these videos"
             : "Drop to compress this video";
         DropOverlay.Visibility = ok ? Visibility.Visible : Visibility.Collapsed;
         e.Handled = true;
@@ -507,7 +514,17 @@ public partial class MainWindow : Window
         var page = ActivePage;
         if (page.IsBusy) return;
         var files = DroppedFiles(e);
-        var videos = files.Where(Ui.IsVideo).ToList();
+        var folders = files.Where(Directory.Exists).ToList();
+        if (folders.Count > 0 && page is Pages.CompressPage compress)
+        {
+            _ = compress.LoadFolderAsync(folders[0]);
+            return;
+        }
+        // Queue pages take the videos inside a dropped folder too.
+        var videos = files.Where(Ui.IsVideo)
+            .Concat(ActiveView == ResizeView || ActiveView == ConverterView
+                ? folders.SelectMany(f => Ui.FindVideos(f, recursive: false)) : [])
+            .ToList();
         if (videos.Count > 0) _ = page.LoadVideosAsync(videos);
         else if (files.Length > 0)
             MessageBox.Show(this, $"\"{Path.GetFileName(files[0])}\" is not a supported video file.", "Compress",

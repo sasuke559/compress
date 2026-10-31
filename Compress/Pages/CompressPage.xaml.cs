@@ -61,6 +61,7 @@ public partial class CompressPage : UserControl, IToolPage
     public bool HandleKey(KeyEventArgs e)
     {
         if (EditorView.Visibility != Visibility.Visible || Keyboard.Modifiers != ModifierKeys.None) return false;
+        if (IsBatch) return HandleBatchKey(e);
         switch (e.Key)
         {
             case Key.Space: Player.TogglePlay(); return true;
@@ -93,6 +94,7 @@ public partial class CompressPage : UserControl, IToolPage
         try
         {
             var info = await VideoEngine.ProbeAsync(_state.Tools, path);
+            LeaveBatch();
             _video = info;
             _resultPath = null;
             _trimStart = TimeSpan.Zero;
@@ -353,6 +355,11 @@ public partial class CompressPage : UserControl, IToolPage
 
     void UpdateEstimate()
     {
+        if (IsBatch)
+        {
+            UpdateBatchEstimate();
+            return;
+        }
         if (_video is null) return;
         try
         {
@@ -391,6 +398,11 @@ public partial class CompressPage : UserControl, IToolPage
 
     async void CompressButton_Click(object sender, RoutedEventArgs e)
     {
+        if (IsBatch)
+        {
+            await CompressBatchAsync();
+            return;
+        }
         if (_video is null || _state.Tools is null || IsBusy) return;
 
         var video = _video;
@@ -554,6 +566,9 @@ public partial class CompressPage : UserControl, IToolPage
 
         CopyFileIcon.Text = "\uE8C8";
         CopyFileText.Text = "Copy file (paste into Discord)";
+        DoneTitle.Text = "Compression complete";
+        CopyFileButton.Visibility = Visibility.Visible;
+        TryOtherButton.Visibility = Visibility.Visible;
         ShowPanel(DonePanel);
         if (!replaced)
         {
@@ -564,7 +579,11 @@ public partial class CompressPage : UserControl, IToolPage
         Ui.NotifyFinished(this);
     }
 
-    void ShowInFolder_Click(object sender, RoutedEventArgs e) => Ui.ShowInExplorer(_resultPath);
+    void ShowInFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (IsBatch) ShowBatchInFolder();
+        else Ui.ShowInExplorer(_resultPath);
+    }
 
     void CopyFile_Click(object sender, RoutedEventArgs e)
     {

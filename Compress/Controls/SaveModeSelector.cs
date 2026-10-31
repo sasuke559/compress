@@ -19,7 +19,16 @@ public sealed class SaveModeSelector : StackPanel
     bool _updating;
 
     /// <summary>Explanation shown for "New file", e.g. which suffix the name gets.</summary>
-    public string NewFileHint { get; set; } = "The original stays as it is; the result is saved next to it.";
+    public string NewFileHint
+    {
+        get => _newFileHint;
+        set
+        {
+            _newFileHint = value;
+            Update();
+        }
+    }
+    string _newFileHint = "The original stays as it is; the result is saved next to it.";
 
     /// <summary>Explanation shown for "Replace original".</summary>
     public string ReplaceHint { get; set; } = "The result takes the original's name. The original goes to the Recycle Bin.";

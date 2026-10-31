@@ -38,6 +38,7 @@ Game clips straight out of the NVIDIA app, OBS or Medal are huge, often recorded
 - Never produces a file bigger than the original: bitrate caps plus an automatic size-limited second pass.
 - H.264 or H.265, optional resolution (1080p / 720p / 480p) and frame-rate (60 / 30 fps) limits, trim before compressing.
 - Before/after toggle to compare the result with the original.
+- **Whole folders:** drop a folder (subfolders optional) and every clip is compressed in one go into a `<folder> (compressed)` copy, with a total estimate and the space saved.
 
 ### Cutter: cut the moment, lossless
 <img src="docs/screenshots/cutter.png" alt="Cutter" width="820" />

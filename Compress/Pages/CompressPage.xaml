@@ -1,16 +1,73 @@
 <UserControl x:Class="Compress.Pages.CompressPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:Compress.Controls">
+             xmlns:controls="clr-namespace:Compress.Controls"
+             xmlns:pages="clr-namespace:Compress.Pages">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <DataTemplate x:Key="QueueItemTemplate" DataType="{x:Type pages:QueueItem}">
+            <Grid ToolTip="{Binding Message}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Border Width="32" Height="32" CornerRadius="9" Background="#1C1C1C" VerticalAlignment="Center">
+                    <TextBlock x:Name="Glyph" Text="&#xE714;" Style="{StaticResource Icon}" FontSize="14" Foreground="{StaticResource Text2}" />
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FileName}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Details}" FontSize="11.5" Foreground="{StaticResource Text3}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <TextBlock x:Name="StatusLabel" Grid.Column="2" Text="{Binding StatusText}" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{StaticResource Text2}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <Button Grid.Column="3" Style="{StaticResource PlayerButton}" Width="28" Height="28" FontSize="11" Content="&#xE711;"
+                        Foreground="{StaticResource Text3}" ToolTip="Remove from queue" Click="RemoveBatchItem_Click"
+                        Visibility="{Binding CanRemove, Converter={StaticResource BoolToVis}}" />
+                <ProgressBar Grid.Row="1" Grid.ColumnSpan="4" Style="{StaticResource Progress}" Height="4" Margin="0,10,0,0"
+                             Value="{Binding Progress, Mode=OneWay}" Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVis}}" />
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Processing">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Text}" />
+                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Text}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Done">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Accent}" />
+                    <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;" />
+                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Accent}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Failed">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Danger}" />
+                    <Setter TargetName="Glyph" Property="Text" Value="&#xE783;" />
+                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Skipped">
+                    <Setter TargetName="StatusLabel" Property="Foreground" Value="{StaticResource Text3}" />
+                    <Setter TargetName="Glyph" Property="Text" Value="&#xE8D8;" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid>
         <!-- ================= Empty state ================= -->
         <Grid x:Name="EmptyView">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,30">
-                <controls:DropZone Title="Drop a video to compress" ButtonText="Select Video" Pick="SelectVideo_Click" />
+                <controls:DropZone Title="Drop a video or folder to compress" ButtonText="Select Video" Pick="SelectVideo_Click" />
+                <Button Style="{StaticResource ChipButton}" HorizontalAlignment="Center" Margin="0,16,0,0" Click="SelectFolder_Click"
+                        ToolTip="Compress every video in a folder in one go">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0" />
+                        <TextBlock Text="Compress a whole folder" />
+                    </StackPanel>
+                </Button>
                 <TextBlock x:Name="EmptyError" Foreground="{StaticResource Danger}" FontSize="13" TextWrapping="Wrap" TextAlignment="Center"
                            MaxWidth="460" HorizontalAlignment="Center" Margin="0,18,0,0" Visibility="Collapsed" />
             </StackPanel>
@@ -57,6 +114,55 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+            </Grid>
+
+            <!-- Folder queue (folder mode) -->
+            <Grid x:Name="BatchArea" Margin="34,30,34,22" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="46" Height="46" CornerRadius="13" Background="{StaticResource AccentSoft}" VerticalAlignment="Center">
+                        <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="19" Foreground="{StaticResource Accent}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="BatchTitle" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="BatchMeta" FontSize="12.5" Foreground="{StaticResource Text3}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,22,6,10">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Queue" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Border Background="{StaticResource Surface2}" CornerRadius="8" Padding="7,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="BatchCount" Text="0" FontSize="11.5" FontWeight="SemiBold" Foreground="{StaticResource Text2}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel x:Name="SubfoldersRow" Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
+                            <TextBlock Text="Include subfolders" FontSize="12.5" Foreground="{StaticResource Text2}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <CheckBox x:Name="SubfoldersSwitch" Style="{StaticResource Switch}" VerticalAlignment="Center" Click="Subfolders_Click" />
+                        </StackPanel>
+                        <Button x:Name="BatchClearButton" Style="{StaticResource LinkButton}" Content="Clear finished" FontSize="12" Margin="0,0,10,0"
+                                Click="BatchClearFinished_Click" />
+                        <Button x:Name="BatchAddButton" Style="{StaticResource ChipButton}" Click="BatchAddVideos_Click" Margin="0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0" />
+                                <TextBlock Text="Add videos" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <ListBox x:Name="BatchList" Grid.Row="2" Style="{StaticResource QueueList}" ItemTemplate="{StaticResource QueueItemTemplate}"
+                         VerticalAlignment="Top" />
             </Grid>
 
             <!-- Side panel -->
@@ -167,11 +273,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <TextBlock Text="Estimated size" Style="{StaticResource TileLabel}" />
+                                        <TextBlock x:Name="EstimateLabel" Text="Estimated size" Style="{StaticResource TileLabel}" />
                                         <TextBlock x:Name="EstimateText" Text="—" Style="{StaticResource TileValue}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                        <TextBlock Text="Output" Style="{StaticResource TileLabel}" HorizontalAlignment="Right" />
+                                        <TextBlock x:Name="EstimateSubLabel" Text="Output" Style="{StaticResource TileLabel}" HorizontalAlignment="Right" />
                                         <TextBlock x:Name="EstimateSub" Text="—" Style="{StaticResource TileValue}" FontSize="13" Foreground="{StaticResource Text2}"
                                                    HorizontalAlignment="Right" Margin="0,5,0,0" />
                                     </StackPanel>
@@ -181,12 +287,12 @@
 
                             <Button x:Name="CompressButton" Style="{StaticResource WhiteButton}" AutomationProperties.Name="Compress" Click="CompressButton_Click">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Compress" />
+                                    <TextBlock x:Name="CompressButtonText" Text="Compress" />
                                     <TextBlock Text="&#xE72A;" Style="{StaticResource Icon}" FontSize="12" Margin="10,1,0,0" />
                                 </StackPanel>
                             </Button>
-                            <Button Style="{StaticResource LinkButton}" Content="Choose another video" HorizontalAlignment="Center" Margin="0,10,0,0"
-                                    Click="SelectVideo_Click" />
+                            <Button x:Name="ChooseAnotherButton" Style="{StaticResource LinkButton}" Content="Choose another video" HorizontalAlignment="Center" Margin="0,10,0,0"
+                                    Click="ChooseAnother_Click" />
                         </StackPanel>
 
                         <!-- Progress -->
@@ -197,7 +303,7 @@
                             <Border Width="46" Height="46" CornerRadius="23" Background="{StaticResource AccentSoft}" HorizontalAlignment="Left">
                                 <TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" FontSize="18" Foreground="{StaticResource Accent}" />
                             </Border>
-                            <TextBlock Text="Compression complete" Style="{StaticResource Heading}" Margin="0,16,0,0" />
+                            <TextBlock x:Name="DoneTitle" Text="Compression complete" Style="{StaticResource Heading}" Margin="0,16,0,0" />
                             <TextBlock x:Name="DoneFileText" Style="{StaticResource CardText}" Margin="0,6,0,20" />
 
                             <Border Style="{StaticResource Tile}" Padding="16">
@@ -235,15 +341,15 @@
                                     <TextBlock Text="Show in folder" />
                                 </StackPanel>
                             </Button>
-                            <Button Style="{StaticResource GhostButton}" Margin="0,10,0,0" Click="CopyFile_Click"
+                            <Button x:Name="CopyFileButton" Style="{StaticResource GhostButton}" Margin="0,10,0,0" Click="CopyFile_Click"
                                     ToolTip="Copies the file so you can paste it straight into Discord, WhatsApp Web or an email">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock x:Name="CopyFileIcon" Text="&#xE8C8;" Style="{StaticResource Icon}" FontSize="14" Margin="0,0,10,0" />
                                     <TextBlock x:Name="CopyFileText" Text="Copy file (paste into Discord)" />
                                 </StackPanel>
                             </Button>
-                            <Button Style="{StaticResource GhostButton}" Content="Try other settings" Margin="0,10,0,0" Click="BackToSettings_Click" />
-                            <Button Style="{StaticResource LinkButton}" Content="Compress another video" HorizontalAlignment="Center" Margin="0,10,0,0" Click="SelectVideo_Click" />
+                            <Button x:Name="TryOtherButton" Style="{StaticResource GhostButton}" Content="Try other settings" Margin="0,10,0,0" Click="BackToSettings_Click" />
+                            <Button x:Name="AnotherButton" Style="{StaticResource LinkButton}" Content="Compress another video" HorizontalAlignment="Center" Margin="0,10,0,0" Click="Another_Click" />
                         </StackPanel>
 
                         <!-- Error -->

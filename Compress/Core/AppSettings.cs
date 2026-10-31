@@ -35,6 +35,8 @@ public sealed class AppSettings
     public int? MaxShortSide { get; set; }
     public double? MaxFps { get; set; }
     public bool RemoveAudio { get; set; }
+    /// <summary>Folder mode: also compress the videos in subfolders.</summary>
+    public bool CompressSubfolders { get; set; } = true;
 
     // Resize page
     public int ResizeWidth { get; set; } = 1920;

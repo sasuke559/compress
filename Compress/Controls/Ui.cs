@@ -34,6 +34,33 @@ static class Ui
         return dialog.ShowDialog(Window.GetWindow(owner)) == true ? dialog.FileNames : [];
     }
 
+    public static string? PickFolder(DependencyObject owner, string title = "Select a folder with videos")
+    {
+        var dialog = new OpenFolderDialog { Title = title };
+        return dialog.ShowDialog(Window.GetWindow(owner)) == true ? dialog.FolderName : null;
+    }
+
+    /// <summary>All videos in a folder (optionally its subfolders), sorted by path; unreadable folders are skipped.</summary>
+    public static List<string> FindVideos(string folder, bool recursive)
+    {
+        try
+        {
+            var options = new EnumerationOptions { RecurseSubdirectories = recursive, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.Hidden | FileAttributes.System };
+            return Directory.EnumerateFiles(folder, "*", options).Where(IsVideo)
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
+    public static void OpenFolder(string? folder)
+    {
+        if (folder is null || !Directory.Exists(folder)) return;
+        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{folder}\"") { UseShellExecute = true });
+    }
+
     /// <summary>
     /// Turns a popup into a dropdown for <paramref name="toggle"/>: the button opens and closes it, a click anywhere else,
     /// Escape or leaving the window closes it. (StaysOpen=False closes on mouse down and the same click then reopened it.)
